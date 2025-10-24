@@ -1,1 +1,11 @@
-full contents of freeswitch/conf/vars.xml
+<x-pre-process cmd="default" data="xml_curl_enabled=false"/>
+<x-pre-process cmd="default" data="global_codec_prefs=OPUS,G722,PCMU,PCMA,H264,VP8"/>
+<x-pre-process cmd="default" data="outbound_codec_prefs=OPUS,G722,PCMU,PCMA"/>
+<x-pre-process cmd="default" data="media_webrtc=true"/>
+
+<x-pre-process cmd="set" data="domain=$${local_ip_v4}"/>
+<x-pre-process cmd="set" data="domain_name=$${domain}"/>
+
+<x-pre-process cmd="set" data="esl_listen_ip=0.0.0.0"/>
+<x-pre-process cmd="set" data="esl_listen_port=8021"/>
+<x-pre-process cmd="set" data="esl_password=ClueCon"/>

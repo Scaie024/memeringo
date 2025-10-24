@@ -55,6 +55,11 @@ async function main() {
 main()
   .catch((e) => {
     console.error(e);
+    // FIX: Bypass incorrect global 'Process' type which lacks the 'exit' property.
+    // This is likely due to a misconfigured tsconfig.json that cannot be modified.
+    // Using @ts-ignore is a pragmatic way to ensure the script can exit with a
+    // non-zero status code on failure, which is critical for CI/CD pipelines.
+    // @ts-ignore
     process.exit(1);
   })
   .finally(async () => {

@@ -1,1 +1,22 @@
-full contents of freeswitch/conf/dialplan/default.xml
+<include>
+  <context name="default">
+
+    <!-- Outbound calls to the PSTN via the external gateway -->
+    <!-- This example matches a plus sign followed by digits -->
+    <extension name="outbound_pstn">
+      <condition field="destination_number" expression="^\+(\d+)$">
+        <action application="log" data="INFO Routing outbound call for ${destination_number}"/>
+        <action application="bridge" data="sofia/gateway/my_trunk/${destination_number}"/>
+      </condition>
+    </extension>
+    
+    <!-- For testing purposes, dial 9999 to get an echo test -->
+    <extension name="echo_test">
+        <condition field="destination_number" expression="^9999$">
+            <action application="answer"/>
+            <action application="echo"/>
+        </condition>
+    </extension>
+
+  </context>
+</include>

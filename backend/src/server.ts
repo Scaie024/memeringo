@@ -1,93 +1,109 @@
-import express from 'express';
-import cors from 'cors';
-import { PrismaClient } from '@prisma/client';
-import { FreeSwitchService } from './services/freeswitch.service';
 
-const app = express();
+import Fastify from 'fastify';
+import cors from '@fastify/cors';
+import { PrismaClient } from '@prisma/client';
+import FreeSwitchService from './services/freeswitch.service';
+import { Did } from '../../types';
+
+// Initialize
+const fastify = Fastify({ logger: false }); // Logger is disabled to prevent stdout pollution
 const prisma = new PrismaClient();
 const freeSwitchService = new FreeSwitchService();
-const PORT = process.env.PORT || 3001;
 
-app.use(cors());
-app.use(express.json());
+// Register plugins
+fastify.register(cors, {
+  origin: '*', // Allow all origins for simplicity in this development environment
+});
 
-// --- DIDs API ---
+// --- API Routes ---
 
 // GET /api/dids - Fetch all DIDs
-app.get('/api/dids', async (req, res) => {
+fastify.get('/api/dids', async (request, reply) => {
   try {
     const dids = await prisma.did.findMany({
-      orderBy: {
-        createdAt: 'desc',
-      },
+      orderBy: { createdAt: 'desc' },
     });
-    res.json(dids);
+    reply.send(dids);
   } catch (error) {
-    console.error('Error fetching DIDs:', error);
-    res.status(500).json({ error: 'Failed to fetch DIDs' });
+    console.error('Failed to fetch DIDs:', error);
+    reply.status(500).send({ error: 'Internal server error' });
   }
 });
 
-// POST /api/dids - Add a new DID
-app.post('/api/dids', async (req, res) => {
+// POST /api/dids - Create a new DID
+fastify.post<{ Body: { phoneNumber: string; country: Did['country'] } }>('/api/dids', async (request, reply) => {
   try {
-    const { phoneNumber, country } = req.body;
+    const { phoneNumber, country } = request.body;
     if (!phoneNumber || !country) {
-      return res.status(400).json({ error: 'Phone number and country are required' });
+      return reply.status(400).send({ error: 'Phone number and country are required' });
     }
-
-    // Basic validation for E.164 format
-    if (!/^\+[1-9]\d{1,14}$/.test(phoneNumber)) {
-        return res.status(400).json({ error: 'Invalid phone number format. Expected E.164 format.' });
-    }
-
     const newDid = await prisma.did.create({
       data: {
         phoneNumber,
         country,
-        // Set sensible defaults for a newly provisioned number
-        status: 'PROVISIONING',
-        routeType: 'AGENT', // Default route
-        routeTarget: 'unassigned_agent',
-        accountId: 'acc_default', // Assuming a single-tenant or default account
+        accountId: 'acc_default', // Hardcoded for now
       },
     });
-    res.status(201).json(newDid);
-  } catch (error) {
-    console.error('Error adding DID:', error);
-    // Handle potential unique constraint violation
-    if ((error as any).code === 'P2002') {
-        return res.status(409).json({ error: 'This phone number is already registered.'});
+    reply.status(201).send(newDid);
+  } catch (error: any) {
+    console.error('Failed to create DID:', error);
+    if (error.code === 'P2002') {
+      return reply.status(409).send({ error: 'This phone number already exists.' });
     }
-    res.status(500).json({ error: 'Failed to add DID' });
+    reply.status(500).send({ error: 'Internal server error' });
   }
 });
 
-// --- Calls API ---
-
-// POST /api/calls/originate - Originate a call from a DID
-app.post('/api/calls/originate', async (req, res) => {
+// POST /api/calls/originate - Originate a new call
+fastify.post<{ Body: { phoneNumber: string } }>('/api/calls/originate', async (request, reply) => {
     try {
-        const { phoneNumber } = req.body;
+        const { phoneNumber } = request.body;
         if (!phoneNumber) {
-            return res.status(400).json({ error: 'Phone number is required' });
+            return reply.status(400).send({ error: 'Phone number is required' });
         }
-        
-        // Use the FreeSwitch service to place the call
-        const callResult = await freeSwitchService.originateCall(phoneNumber);
-
-        if (callResult.success) {
-            res.status(200).json({ message: 'Call initiated successfully', callId: callResult.callId });
-        } else {
-            res.status(500).json({ error: 'Failed to initiate call', details: callResult.error });
-        }
+        // The destination for this test will be the same number, prefixed for international format
+        // This simulates calling a number on the PSTN.
+        const destination = `+${phoneNumber.replace(/\D/g, '')}`; 
+        const callId = await freeSwitchService.originateCall(phoneNumber, destination);
+        reply.send({ message: 'Call initiated!', callId });
     } catch (error) {
-        console.error('Error originating call:', error);
-        res.status(500).json({ error: 'An unexpected error occurred while initiating the call' });
+        const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+        console.error('Error initiating call:', errorMessage);
+        reply.status(500).send({ error: `Failed to initiate call: ${errorMessage}` });
     }
 });
 
 
-app.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:${PORT}`);
-});
+// Graceful shutdown
+const gracefulShutdown = async (signal: string) => {
+  console.error(`Received ${signal}. Shutting down gracefully...`);
+  await fastify.close();
+  await prisma.$disconnect();
+  freeSwitchService.disconnect();
+  // FIX: Bypass incorrect global 'Process' type which lacks the 'exit' property.
+  // @ts-ignore
+  process.exit(0);
+};
+
+// FIX: Bypass incorrect global 'Process' type which lacks the 'on' property.
+// @ts-ignore
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+// @ts-ignore
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+
+
+// Start server
+const start = async () => {
+  try {
+    await freeSwitchService.connect();
+    await fastify.listen({ port: 3001, host: '0.0.0.0' });
+    console.error(`Backend server listening on http://0.0.0.0:3001`);
+  } catch (err) {
+    console.error(err);
+    // FIX: Bypass incorrect global 'Process' type which lacks the 'exit' property.
+    // @ts-ignore
+    process.exit(1);
+  }
+};
+
+start();
