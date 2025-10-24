@@ -1,0 +1,61 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15
+    restart: always
+    environment:
+      POSTGRES_USER: voicewoot
+      POSTGRES_PASSWORD: voicewootpassword
+      POSTGRES_DB: voicewootdb
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U voicewoot -d voicewootdb"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - "3001:3001"
+    depends_on:
+      db:
+        condition: service_healthy
+      freeswitch:
+        condition: service_started
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    command: npm run dev
+    environment:
+      DATABASE_URL: "postgresql://voicewoot:voicewootpassword@db:5432/voicewootdb"
+      FS_ESL_HOST: "freeswitch"
+      FS_ESL_PORT: "8021"
+      FS_ESL_PASSWORD: "ClueCon"
+
+  freeswitch:
+    image: freeswitch/freeswitch:1.10
+    restart: always
+    ports:
+      - "5060:5060/udp" # SIP
+      - "5061:5061/tcp" # SIP TLS
+      - "7443:7443/tcp"  # WSS for WebRTC
+      - "8021:8021/tcp"  # ESL
+      - "16384-32768:16384-32768/udp" # RTP
+    volumes:
+      - ./freeswitch/conf:/usr/local/freeswitch/conf
+    healthcheck:
+      test: ["CMD-SHELL", "fs_cli -x 'status' | grep -q 'UP'"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:

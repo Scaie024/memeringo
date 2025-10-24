@@ -1,0 +1,30 @@
+{
+  "name": "voicewoot-open-source-ultimate",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "react-dom": "^19.2.0",
+    "react": "^19.2.0",
+    "clsx": "^2.1.1",
+    "tailwind-merge": "^3.3.1",
+    "@prisma/client": "^6.18.0",
+    "fastify": "^5.6.1",
+    "@fastify/cors": "^11.1.0",
+    "express": "^5.1.0",
+    "cors": "^2.8.5",
+    "events": "^3.3.0",
+    "modesl": "^1.2.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.14.0",
+    "@vitejs/plugin-react": "^5.0.0",
+    "typescript": "~5.8.2",
+    "vite": "^6.2.0"
+  }
+}

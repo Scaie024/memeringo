@@ -1,0 +1,7 @@
+{
+  "name": "VoiceWoot Open-Source Ultimate",
+  "description": "A comprehensive, frontend-driven, open-source VoIP/Contact Center platform. Manages DIDs/SIP trunks and integrates exclusively with n8n for autonomous voice agents, inspired by functionalities from Twilio, Vapi, and Voximplant.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
