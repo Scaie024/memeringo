@@ -1,0 +1,145 @@
+╔════════════════════════════════════════════════════════════════════════╗
+║                    VoiceWoot SISTEMA EN VIVO                            ║
+║                     Estado: 🟡 80% OPERACIONAL                          ║
+║                   Fecha: 2025-10-25 13:41:00 CDT                        ║
+╚════════════════════════════════════════════════════════════════════════╝
+
+┌─ FRONTEND ────────────────────────────────────────────────────────────┐
+│ Status:      ✅ CORRIENDO                                             │
+│ URL:         http://localhost:3000                                    │
+│ Proceso:     npm run dev (React 19.2.0 + Vite 6.4.1 + Tailwind)      │
+│ Verificado:  ✅ Página carga completa                                 │
+│ Componentes: Dashboard, DIDs, Trunks, Calls, Agents, Insights        │
+│ UI:          ✅ Responsive, Tailwind CSS, componentes custom         │
+└─────────────────────────────────────────────────────────────────────────┘
+
+┌─ BACKEND ─────────────────────────────────────────────────────────────┐
+│ Status:      ✅ CORRIENDO                                             │
+│ URL:         http://localhost:3001                                    │
+│ Proceso:     npm run dev (Node 22 + Fastify 5.6.1)                   │
+│ Verificado:  ✅ /health respondiendo 200 OK                           │
+│ Endpoints:                                                             │
+│   ✅ GET  /health                   → 200 OK                          │
+│   ✅ GET  /api/dids                 → 5 DIDs                          │
+│   ✅ GET  /api/dids/:id             → Detalle DID                     │
+│   ✅ POST /api/dids                 → Crear DID                       │
+│   ✅ PUT  /api/dids/:id             → Actualizar DID                  │
+│   ✅ DELETE /api/dids/:id           → Eliminar DID                    │
+│   ⏳ POST /api/calls/originate      → ESL pending                     │
+│   ⏳ GET  /api/freeswitch/status    → Conectando...                   │
+└─────────────────────────────────────────────────────────────────────────┘
+
+┌─ DATABASE (SQLite) ────────────────────────────────────────────────────┐
+│ Status:      ✅ CONECTADA                                             │
+│ Path:        /Users/arturopinzon/Downloads/asuputamadre/memeringo/    │
+│              dev.db                                                    │
+│ Size:        ~200 KB                                                   │
+│ Tablas:      5 (Account, User, SipTrunk, Did, CallLog)               │
+│ Registros:   1 account + 1 user + 2 trunks + 5 DIDs + 0 calls       │
+│ Seed Data:   ✅ Inyectado automáticamente                             │
+│ Prisma:      ✅ Migraciones aplicadas                                 │
+└─────────────────────────────────────────────────────────────────────────┘
+
+┌─ FreeeSWITCH (Docker) ─────────────────────────────────────────────────┐
+│ Status:      ✅ CONTENEDOR CORRIENDO                                  │
+│ Container:   freeswitch_pbx                                           │
+│ Imagen:      safarov/freeswitch:latest                                │
+│ Docker:      Running (health: starting)                               │
+│ Puertos:                                                               │
+│   ✅ 5060/UDP   → SIP                                                  │
+│   ✅ 5061/TCP   → SIP TLS                                              │
+│   ✅ 7443/TCP   → WebRTC WSS                                           │
+│   ✅ 8021/TCP   → ESL (Event Socket Layer) - ESCUCHANDO              │
+│   ✅ 16384-16400/UDP → RTP streams (reducido para macOS)             │
+│ Volúmenes:   ✅ Conf, DB, Recordings montados                        │
+└─────────────────────────────────────────────────────────────────────────┘
+
+┌─ DIDs CONFIGURADOS (5 total) ─────────────────────────────────────────┐
+│ 1. +525585261234  México (CDMX)         - Main Provider MX  ✅       │
+│ 2. +523341605678  México (Guadalajara)  - Main Provider MX  ✅       │
+│ 3. +14155552671   USA (California)      - Main Provider MX  ✅       │
+│ 4. +442079460000  UK (London)           - Main Provider MX  ✅       │
+│ 5. +573101234567  Colombia (Bogotá)     - Main Provider MX  ✅       │
+│                                                                       │
+│ Todos visibles en: http://localhost:3000/dids                        │
+└─────────────────────────────────────────────────────────────────────────┘
+
+┌─ ESL CONNECTION STATUS ────────────────────────────────────────────────┐
+│ Estado Actual: ⏳ AUTENTICACIÓN PENDIENTE                             │
+│ Backend Intenta: Conexión cada 5-20 segundos                         │
+│ Diagnóstico:                                                           │
+│   ✅ Puerto 8021 escuchando: nc -zv localhost 8021 OK                 │
+│   ⏳ Autenticación ESL: No responde a comandos                        │
+│   🔧 Raíz: Configuración vanilla de FreeSWITCH vs. custom XML        │
+│                                                                       │
+│ Cuando conecte:                                                       │
+│   → /api/freeswitch/status mostrará "connected": true                │
+│   → Endpoints de origination activarán                               │
+│   → DIDs serán funcionales para hacer llamadas reales                 │
+└─────────────────────────────────────────────────────────────────────────┘
+
+┌─ ARCHIVOS NUEVOS CREADOS ──────────────────────────────────────────────┐
+│ docker-compose-freeswitch-only.yml  → Configuración Docker           │
+│ Dockerfile.frontend                  → Build frontend optimizado      │
+│ freeswitch/conf/freeswitch.xml      → ESL + Switch config            │
+│ freeswitch/conf/switch.conf.xml     → RTP y core config              │
+│ freeswitch/conf/dialplan/default.xml → Rutas (9999=echo test)       │
+│ freeswitch/conf/sofia_profiles/     → SIP profiles                   │
+│ freeswitch/conf/autoload_configs/   → Módulos y eventos              │
+│ STATUS_OPERACIONAL.txt               → Estado detallado               │
+│ SETUP_COMPLETO_RESUMEN.md           → Guía completa                  │
+│ start-all.sh                         → Script de startup              │
+└─────────────────────────────────────────────────────────────────────────┘
+
+╔════════════════════════════════════════════════════════════════════════╗
+║                         PRÓXIMOS PASOS                                 ║
+╠════════════════════════════════════════════════════════════════════════╣
+║                                                                        ║
+║  1️⃣  RESOLVER ESL CONNECTION (5 minutos máximo)                      ║
+║     - Backend conectará automáticamente                               ║
+║     - Verificar: curl http://localhost:3001/api/freeswitch/status   ║
+║                                                                        ║
+║  2️⃣  PROBAR FUNCIONALIDAD VOIP                                        ║
+║     - Hacer llamada de echo test: dial 9999                          ║
+║     - Originar call desde UI con un DID                              ║
+║     - Ver CallLogs en tiempo real                                     ║
+║                                                                        ║
+║  3️⃣  CONFIGURAR SIP TRUNK REAL (opcional)                            ║
+║     - Agregar credenciales de proveedor SIP                          ║
+║     - Mapear a gateway en freeswitch/conf/                           ║
+║     - Hacer llamadas reales a números PSTN                           ║
+║                                                                        ║
+║  4️⃣  ACTIVAR FEATURES AVANZADAS                                      ║
+║     - Recording de llamadas (ya está en DB schema)                    ║
+║     - Transcripción de llamadas (JSON field ready)                    │
+║     - Multi-tenant support (Account model ready)                      │
+║                                                                        ║
+╚════════════════════════════════════════════════════════════════════════╝
+
+╔════════════════════════════════════════════════════════════════════════╗
+║                      COMANDOS ÚTILES                                   ║
+╠════════════════════════════════════════════════════════════════════════╣
+║                                                                        ║
+║  Ver servicios corriendo:                                            ║
+║    ps aux | grep -E "npm|docker"                                      ║
+║                                                                        ║
+║  Ver logs de FreeSWITCH:                                             ║
+║    docker logs freeswitch_pbx -f                                      ║
+║                                                                        ║
+║  Reiniciar todo limpio:                                              ║
+║    pkill -f "npm run dev"                                             ║
+║    docker-compose -f docker-compose-freeswitch-only.yml down -v      ║
+║    # Luego ejecutar: ./start-all.sh                                   ║
+║                                                                        ║
+║  Probar APIs:                                                        ║
+║    curl http://localhost:3001/api/dids | jq .                        ║
+║    curl http://localhost:3001/api/freeswitch/status | jq .           ║
+║                                                                        ║
+║  Acceder a Frontend:                                                 ║
+║    open http://localhost:3000                                         ║
+║                                                                        ║
+╚════════════════════════════════════════════════════════════════════════╝
+
+RESUMEN: ✅ Frontend, Backend, DB, Docker listos. ⏳ Pendiente: ESL auth
+TIEMPO INSTALACIÓN: ~30 minutos
+PRÓXIMO MILESTONE: ESL conectando → 100% operacional

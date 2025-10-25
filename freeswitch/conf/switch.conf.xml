@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document type="freeswitch/xml">
+  <section name="configuration" description="Various FreeSWITCH Configuration">
+    <configuration name="switch.conf" description="Core Configuration">
+      <default-ptimes>
+        <param name="default-ptime" value="20"/>
+      </default-ptimes>
+
+      <!-- RTP Configuration -->
+      <settings>
+        <param name="rtp-start-port" value="16384"/>
+        <param name="rtp-end-port" value="32768"/>
+        <param name="rtp-ip" value="$${local_ip_v4}"/>
+        <param name="hold-music" value="silence_stream://1400"/>
+        <param name="log-g729-payloads" value="true"/>
+        <param name="colorize-console" value="true"/>
+      </settings>
+    </configuration>
+  </section>
+</document>

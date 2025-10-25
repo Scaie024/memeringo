@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document type="freeswitch/xml">
+  <section name="configuration" description="Minimal FreeSWITCH Configuration">
+    <configuration name="switch.conf" description="Core Configuration">
+      <default-ptimes>
+        <param name="default-ptime" value="20"/>
+      </default-ptimes>
+
+      <settings>
+        <param name="rtp-start-port" value="16384"/>
+        <param name="rtp-end-port" value="16400"/>
+        <param name="rtp-ip" value="0.0.0.0"/>
+      </settings>
+    </configuration>
+
+    <configuration name="event_socket.conf" description="Event Socket Layer">
+      <settings>
+        <param name="listen-ip" value="0.0.0.0"/>
+        <param name="listen-port" value="8021"/>
+        <param name="password" value="ClueCon"/>
+        <param name="apply-inbound-acl" value=""/>
+        <param name="allow-all-acl" value="true"/>
+      </settings>
+    </configuration>
+  </section>
+</document>

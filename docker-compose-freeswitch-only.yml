@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  freeswitch:
+    image: safarov/freeswitch:latest
+    container_name: freeswitch_pbx
+    restart: unless-stopped
+    ports:
+      - "5060:5060/udp"
+      - "5061:5061/tcp"
+      - "7443:7443/tcp"
+      - "8021:8021/tcp"
+      - "16384-16400:16384-16400/udp"
+    volumes:
+      - ./freeswitch/conf:/usr/local/freeswitch/conf:ro
+      - freeswitch_db:/usr/local/freeswitch/db
+      - freeswitch_recordings:/usr/local/freeswitch/recordings
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "8021"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+volumes:
+  freeswitch_db:
+    driver: local
+  freeswitch_recordings:
+    driver: local

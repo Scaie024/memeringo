@@ -1,22 +1,52 @@
 <include>
+  <!-- Default context for local extensions and outbound calls -->
   <context name="default">
 
-    <!-- Outbound calls to the PSTN via the external gateway -->
-    <!-- This example matches a plus sign followed by digits -->
-    <extension name="outbound_pstn">
-      <condition field="destination_number" expression="^\+(\d+)$">
-        <action application="log" data="INFO Routing outbound call for ${destination_number}"/>
-        <action application="bridge" data="sofia/gateway/my_trunk/${destination_number}"/>
+    <!-- Echo Test: dial 9999 for echo test -->
+    <extension name="echo_test">
+      <condition field="destination_number" expression="^9999$">
+        <action application="answer"/>
+        <action application="echo"/>
       </condition>
     </extension>
-    
-    <!-- For testing purposes, dial 9999 to get an echo test -->
-    <extension name="echo_test">
-        <condition field="destination_number" expression="^9999$">
-            <action application="answer"/>
-            <action application="echo"/>
-        </condition>
+
+    <!-- Info: dial 9998 to get system information -->
+    <extension name="system_info">
+      <condition field="destination_number" expression="^9998$">
+        <action application="answer"/>
+        <action application="playback" data="say:You are calling FreeSWITCH"/>
+      </condition>
     </extension>
 
+    <!-- Outbound calls via external gateway -->
+    <!-- Match: +1234567890 format (E.164) -->
+    <extension name="outbound_via_gateway">
+      <condition field="destination_number" expression="^\+?(\d+)$">
+        <action application="set" data="effective_caller_id_name=VoiceWoot"/>
+        <action application="set" data="effective_caller_id_number=${caller_id_number}"/>
+        <action application="log" data="INFO Originating call to ${destination_number}"/>
+        <action application="bridge" data="sofia/gateway/my_trunk/$1"/>
+      </condition>
+    </extension>
+
+    <!-- Local extension routing (for future use) -->
+    <extension name="local_extension">
+      <condition field="destination_number" expression="^1000$">
+        <action application="log" data="INFO Routing to extension 1000"/>
+        <action application="answer"/>
+        <action application="playback" data="say:Extension 1000 is not yet configured"/>
+      </condition>
+    </extension>
+
+  </context>
+
+  <!-- Public context for incoming calls -->
+  <context name="public">
+    <!-- Prevent unauthorized calls -->
+    <extension name="deny_all">
+      <condition>
+        <action application="hangup" data="CALL_REJECTED"/>
+      </condition>
+    </extension>
   </context>
 </include>

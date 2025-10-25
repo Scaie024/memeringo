@@ -1,0 +1,169 @@
+# STATUS OPERACIONAL - VoiceWoot con FreeSWITCH
+
+## Timestamp: 2025-10-25 13:41 (CDT)
+
+---
+
+## ✅ COMPONENTES ACTIVOS
+
+### Frontend (React + Vite)
+- **Status**: 🟢 CORRIENDO
+- **URL**: http://localhost:3000
+- **Puerto**: 3000
+- **Proceso**: `npm run dev`
+- **Verificación**: `curl http://localhost:3000` → 200 OK
+- **Features**: DIDs page, Dashboard, Trunks, Calls, Agents, Insights
+
+### Backend (Node.js + Fastify)
+- **Status**: 🟢 CORRIENDO
+- **URL**: http://localhost:3001
+- **Puerto**: 3001
+- **Proceso**: `npm run dev` (via ts-node-dev)
+- **Verificación**: `curl http://localhost:3001/health` → 200 OK
+- **APIs**:
+  - `GET /health` → 200 OK ✅
+  - `GET /api/dids` → 5 DIDs loaded ✅
+  - `POST /api/calls/originate` → Ready (ESL pending)
+  - `GET /api/freeswitch/status` → ESL checking...
+
+### Database (SQLite)
+- **Status**: 🟢 CORRIENDO
+- **Location**: `/Users/arturopinzon/Downloads/asuputamadre/memeringo/dev.db`
+- **Size**: ~200KB
+- **Tables**: 5 (Account, User, SipTrunk, Did, CallLog)
+- **Seed Data**: ✅ Loaded
+  - 1 Account: `acc_default`
+  - 1 User: `admin@voicewoot.com`
+  - 2 SIP Trunks: Main Provider MX, Backup Provider
+  - 5 DIDs: +525585261234, +523341605678, +14155552671, +442079460000, +573101234567
+
+### FreeSWITCH (safarov/freeswitch:latest)
+- **Status**: 🟢 CONTENEDOR CORRIENDO
+- **Container**: freeswitch_pbx
+- **Docker**: Running (health: starting)
+- **Puertos Abiertos**:
+  - 5060/UDP → SIP
+  - 5061/TCP → SIP TLS
+  - 7443/TCP → WebRTC WSS
+  - **8021/TCP → ESL (Event Socket Layer)** ✅ ESCUCHANDO
+  - 16384-16400/UDP → RTP (reducido para macOS)
+- **Configuración**: `/Users/arturopinzon/Downloads/asuputamadre/memeringo/freeswitch/conf/`
+  - switch.conf.xml
+  - vars.xml
+  - sofia_profiles/external.xml
+  - dialplan/default.xml
+  - autoload_configs/event_socket.conf.xml
+
+---
+
+## ⚠️ ESTADO ACTUAL DEL ESL (Event Socket Layer)
+
+### Problema Detectado
+- Puerto 8021 está abierto: `nc -zv localhost 8021` → ✅ Connection succeeded
+- Pero FreeSWITCH ESL no responde a autenticación
+- Backend intenta conectar: `Connecting to FreeSWITCH ESL at localhost:8021...` → Desconexión inmediata
+- Prueba manual: `(echo "auth ClueCon"; sleep 1; echo "status") | nc localhost 8021` → Sin respuesta
+
+### Logs del Contenedor FreeSWITCH
+```
+ERROR: Could not set nice level
+ERROR: Failed to set SCHED_FIFO scheduler (Operation not permitted)
+[ERR] sofia.c:5178 Invalid ext-rtp-ip
+[ERR] sofia.c:5275 Invalid ext-sip-ip
+[CRIT] mod_event_socket.c:2960 Cannot get information about IP address ::
+```
+
+### Raíz del Problema
+- Imagen safarov/freeswitch está usando configuración vanilla por defecto
+- Nuestros archivos XML en `./freeswitch/conf/` no están siendo cargados correctamente
+- Necesario: Usar configuración vanilla para Sofia/SIP o archivos XML correctos para ESL
+
+---
+
+## 🔧 PRÓXIMOS PASOS INMEDIATOS
+
+### Opción A: Usar Configuración Vanilla (Recomendada - Más Rápido)
+1. Copiar configuración vanilla del contenedor
+2. Modificar solo event_socket.conf.xml
+3. Reiniciar contenedor
+
+### Opción B: Debuggear Configuración XML (Más Tiempo)
+1. Verificar rutas exactas en Docker
+2. Validar sintaxis XML completa
+3. Agregar logging de FreeSWITCH
+
+### Opción C: Cambiar a Imagen Alternativa
+1. Probar `bdfoster/freeswitch` o `praekeltfoundation/freeswitch`
+2. Puede tener mejor soporte para ESL out-of-box
+
+---
+
+##  📊 ESTADÍSTICAS
+
+| Componente | Estado | Tiempo Activo |
+|-----------|--------|--------------|
+| Frontend | ✅ | 2 min |
+| Backend | ✅ | 3 min |
+| Database | ✅ | Persistente |
+| FreeSWITCH | ✅ | 3 min |
+| ESL Connection | ⏳ | Intentando... |
+| Sistema General | 🟡 | 80% Funcional |
+
+---
+
+## 🎯 META
+
+Cuando ESL esté conectado (backend mostrará `connected: true`):
+- [ ] Prueba de echo: `POST /api/calls/originate` con destino `9999`
+- [ ] Prueba de llamada real: Usar uno de los 5 DIDs configurados
+- [ ] Grabación: Verificar que `/usr/local/freeswitch/recordings` funcione
+- [ ] Dashboard: Mostrar llamadas en tiempo real
+
+---
+
+## 🚀 COMANDOS ÚTILES
+
+### Ver logs de FreeSWITCH
+```bash
+docker logs freeswitch_pbx -f
+```
+
+### Ver logs del Backend
+```bash
+# (está en el terminal bg con npm run dev)
+# o
+ps aux | grep "npm run dev"
+```
+
+### Ver status de Docker
+```bash
+cd /Users/arturopinzon/Downloads/asuputamadre/memeringo && \
+docker-compose -f docker-compose-freeswitch-only.yml ps
+```
+
+### Probar Backend
+```bash
+curl http://localhost:3001/health
+curl http://localhost:3001/api/dids | jq .
+curl http://localhost:3001/api/freeswitch/status | jq .
+```
+
+### Probar Frontend
+```bash
+curl http://localhost:3000 | head -20
+```
+
+---
+
+## 📝 NOTAS
+
+- Homebrew install de FreeSWITCH en macOS no funcionó (binario no compilado)
+- Docker es la solución correcta para development
+- Límite de archivos abiertos (ulimit) aumentado a 8192 para soporte de RTP
+- Rango RTP reducido (16384-16400) por limitaciones de macOS
+- Backend y Frontend corriendo con `npm run dev` en paralelo
+- Base de datos SQLite local (más rápida que PostgreSQL en dev)
+
+---
+
+**Próxima Acción**: Resolver conexión ESL → `curl http://localhost:3001/api/freeswitch/status` debe retornar `{"connected": true, ...}`

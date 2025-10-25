@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document type="freeswitch/xml">
+  <section name="configuration" description="Sofia Configuration">
+    <configuration name="sofia.conf" description="Sofia SIP Stack">
+      <global_settings>
+        <param name="log-level" value="1"/>
+        <param name="debug-presence" value="0"/>
+        <param name="cert-path" value="$${certs_dir}"/>
+        <param name="auto-restart" value="true"/>
+        <param name="max-proceeding" value="10"/>
+        <param name="session-timeout" value="1800"/>
+        <param name="minimum-session-expires" value="90"/>
+        <param name="nonce-ttl" value="60"/>
+      </global_settings>
+
+      <profiles>
+        <x-pre-process cmd="include" data="sofia_profiles/*.xml"/>
+      </profiles>
+    </configuration>
+  </section>
+</document>

@@ -1,0 +1,16 @@
+<include>
+  <!-- This is an example gateway. 
+       Replace the values with your actual SIP trunk provider details.
+       You can create multiple files like this for different trunks.
+  -->
+  <gateway name="my_trunk">
+    <!--/ IP address or hostname of your SIP provider -->
+    <param name="proxy" value="sip.yourprovider.com"/>
+    <!--/ Your SIP username -->
+    <param name="username" value="your_sip_username"/>
+    <!--/ Your SIP password -->
+    <param name="password" value="your_sip_password"/>
+    <!--/ Set to true to register with the provider -->
+    <param name="register" value="false"/>
+  </gateway>
+</include>
