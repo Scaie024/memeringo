@@ -1,52 +1,98 @@
-<include>
-  <!-- Default context for local extensions and outbound calls -->
-  <context name="default">
+<?xml version="1.0" encoding="UTF-8"?>
+<document type="freeswitch/xml">
+  <section name="dialplan" description="Dial Plan">
+    
+    <!-- DEFAULT CONTEXT - Llamadas internas y DIDs -->
+    <context name="default">
+      <description>Default dialplan for internal calls and DID routing</description>
+      
+      <!-- Echo Test: Marcación 9000 (para testing SIP/RTP) -->
+      <extension name="echo_test">
+        <condition field="destination_number" expression="^9000$">
+          <action application="answer"/>
+          <action application="sleep" data="1000"/>
+          <action application="playback" data="silence_stream://1000"/>
+          <action application="echo"/>
+        </condition>
+      </extension>
 
-    <!-- Echo Test: dial 9999 for echo test -->
-    <extension name="echo_test">
-      <condition field="destination_number" expression="^9999$">
-        <action application="answer"/>
-        <action application="echo"/>
-      </condition>
-    </extension>
+      <!-- Tone Test: Marcación 9001 -->
+      <extension name="tone_test">
+        <condition field="destination_number" expression="^9001$">
+          <action application="answer"/>
+          <action application="sleep" data="1000"/>
+          <action application="playback" data="tone_stream://%(200,0,400,600,25);loops=10"/>
+        </condition>
+      </extension>
 
-    <!-- Info: dial 9998 to get system information -->
-    <extension name="system_info">
-      <condition field="destination_number" expression="^9998$">
-        <action application="answer"/>
-        <action application="playback" data="say:You are calling FreeSWITCH"/>
-      </condition>
-    </extension>
+      <!-- IVR/Wait Music: Marcación 9002 -->
+      <extension name="wait_music">
+        <condition field="destination_number" expression="^9002$">
+          <action application="answer"/>
+          <action application="playback" data="local_stream://moh"/>
+        </condition>
+      </extension>
 
-    <!-- Outbound calls via external gateway -->
-    <!-- Match: +1234567890 format (E.164) -->
-    <extension name="outbound_via_gateway">
-      <condition field="destination_number" expression="^\+?(\d+)$">
-        <action application="set" data="effective_caller_id_name=VoiceWoot"/>
-        <action application="set" data="effective_caller_id_number=${caller_id_number}"/>
-        <action application="log" data="INFO Originating call to ${destination_number}"/>
-        <action application="bridge" data="sofia/gateway/my_trunk/$1"/>
-      </condition>
-    </extension>
+      <!-- DIDs - Enrutamiento a agentes -->
+      <!-- Números con 10 o más dígitos se consideran DIDs -->
+      <extension name="did_routing">
+        <condition field="destination_number" expression="^\+?1?\d{10,}$">
+          <action application="set" data="voicemail_profile=default"/>
+          <action application="set" data="call_direction=inbound"/>
+          <!-- Bridge a agente - por ahora local -->
+          <action application="bridge" data="user/agent@$${domain}"/>
+          <!-- Si no contesta, voicemail -->
+          <action application="voicemail" data="default $${domain} agent"/>
+        </condition>
+      </extension>
 
-    <!-- Local extension routing (for future use) -->
-    <extension name="local_extension">
-      <condition field="destination_number" expression="^1000$">
-        <action application="log" data="INFO Routing to extension 1000"/>
-        <action application="answer"/>
-        <action application="playback" data="say:Extension 1000 is not yet configured"/>
-      </condition>
-    </extension>
+      <!-- Local calls (extensiones 100-199) -->
+      <extension name="local_calls">
+        <condition field="destination_number" expression="^([0-9]{3})$">
+          <action application="set" data="call_type=internal"/>
+          <action application="bridge" data="user/$1@$${domain}"/>
+        </condition>
+      </extension>
 
-  </context>
+      <!-- Default fallback -->
+      <extension name="hangup">
+        <condition>
+          <action application="playback" data="silence_stream://1000"/>
+          <action application="hangup" data="NORMAL_CLEARING"/>
+        </condition>
+      </extension>
+    </context>
 
-  <!-- Public context for incoming calls -->
-  <context name="public">
-    <!-- Prevent unauthorized calls -->
-    <extension name="deny_all">
-      <condition>
-        <action application="hangup" data="CALL_REJECTED"/>
-      </condition>
-    </extension>
-  </context>
-</include>
+    <!-- PUBLIC CONTEXT - Llamadas entrantes desde gateways -->
+    <context name="public">
+      <description>Incoming calls from external gateways/carriers</description>
+      
+      <!-- Echo Test desde externos -->
+      <extension name="echo_test">
+        <condition field="destination_number" expression="^9000$">
+          <action application="answer"/>
+          <action application="echo"/>
+        </condition>
+      </extension>
+
+      <!-- Ruteo de llamadas entrantes a DIDs -->
+      <extension name="route_to_did">
+        <condition field="destination_number" expression="^\+?1?\d{10,}$">
+          <action application="set" data="call_direction=inbound_external"/>
+          <action application="set" data="voicemail_profile=default"/>
+          <!-- Intentar rutear internamente -->
+          <action application="bridge" data="sofia/internal/$${destination_number}@$${domain}"/>
+          <!-- Fallback a voicemail -->
+          <action application="voicemail" data="default $${domain} default"/>
+        </condition>
+      </extension>
+
+      <!-- Fallback hangup -->
+      <extension name="hangup">
+        <condition>
+          <action application="hangup" data="CALL_REJECTED"/>
+        </condition>
+      </extension>
+    </context>
+  </section>
+</document>

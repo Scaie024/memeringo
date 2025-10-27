@@ -6,11 +6,32 @@
         <param name="listen-ip" value="0.0.0.0"/>
         <param name="listen-port" value="8021"/>
         <param name="password" value="ClueCon"/>
-        <param name="apply-inbound-acl" value=""/>
-        <!-- Set to true to allow connections from any IP -->
-        <param name="allow-all-acl" value="true"/>
+        <param name="apply-inbound-acl" value="internal"/>
+        <param name="allow-all-acl" value="false"/>
         <param name="apply-password-acl" value="allow"/>
+        <param name="tcp-keepalive" value="true"/>
+        <param name="tcp-idle-timeout" value="300"/>
       </settings>
+
+      <!-- ACL - Permitir conexiones desde Docker network -->
+      <acl-lists>
+        <!-- Internal Docker network - localhost y Docker internal IPs -->
+        <list name="internal" default="deny">
+          <node type="allow" cidr="127.0.0.1/32"/>
+          <node type="allow" cidr="::1/128"/>
+          <node type="allow" cidr="172.17.0.0/16"/>
+          <node type="allow" cidr="172.18.0.0/16"/>
+          <node type="allow" cidr="172.19.0.0/16"/>
+          <node type="allow" cidr="172.20.0.0/14"/>
+          <node type="allow" cidr="10.0.0.0/8"/>
+          <node type="allow" cidr="192.168.0.0/16"/>
+        </list>
+        
+        <!-- Public - para llamadas externas -->
+        <list name="public" default="deny">
+          <node type="allow" cidr="0.0.0.0/0"/>
+        </list>
+      </acl-lists>
     </configuration>
   </section>
 </document>

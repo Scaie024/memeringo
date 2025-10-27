@@ -3,15 +3,83 @@
   <section name="configuration" description="Sofia Configuration">
     <configuration name="sofia.conf" description="Sofia SIP Stack">
       <global_settings>
-        <param name="log-level" value="1"/>
-        <param name="debug-presence" value="0"/>
+        <param name="log-level" value="6"/>
+        <param name="debug-presence" value="2"/>
+        <param name="debug-sla" value="0"/>
         <param name="cert-path" value="$${certs_dir}"/>
         <param name="auto-restart" value="true"/>
         <param name="max-proceeding" value="10"/>
         <param name="session-timeout" value="1800"/>
-        <param name="minimum-session-expires" value="90"/>
+        <param name="minimum-session-expires" value="120"/>
         <param name="nonce-ttl" value="60"/>
+        <param name="reuse-encoder" value="true"/>
       </global_settings>
+
+      <!-- INTERNAL PROFILE -->
+      <profile name="internal">
+        <description>Internal VoIP Profile for agent calls</description>
+        <param name="domain" value="$${domain}"/>
+        <param name="username" value="$${domain}"/>
+        <param name="dialplan" value="XML"/>
+        <param name="context" value="default"/>
+        <param name="rtp-ip" value="$${local_ip_v4}"/>
+        <param name="sip-ip" value="$${local_ip_v4}"/>
+        <param name="ext-rtp-ip" value="$${external_ip_v4}"/>
+        <param name="ext-sip-ip" value="$${external_ip_v4}"/>
+        <param name="bind-params" value="transport=udp,tcp,tls"/>
+        
+        <!-- CODECS -->
+        <param name="inbound-codec-prefs" value="$${inbound_codec_prefs}"/>
+        <param name="outbound-codec-prefs" value="$${outbound_codec_prefs}"/>
+        
+        <!-- RTP Settings -->
+        <param name="rtp-timer-name" value="soft"/>
+        <param name="rtp-autoflush-during-bridge" value="true"/>
+        <param name="rtp-hold-timeout" value="1800"/>
+        <param name="media-timeout" value="1800"/>
+        <param name="rtp-rewrite-timestamps" value="true"/>
+        
+        <!-- SIP Settings -->
+        <param name="sip-port" value="$${sip_port}"/>
+        <param name="tls-sip-port" value="$${sip_tls_port}"/>
+        <param name="enable-timer" value="true"/>
+        <param name="dtmf-type" value="rfc2833"/>
+        
+        <!-- Auth -->
+        <param name="auth-calls" value="false"/>
+        <param name="challenge-realm" value="auto_to"/>
+        
+        <!-- NAT -->
+        <param name="user-agent-string" value="VoiceWoot-PBX"/>
+        <param name="apply-nat-acl" value="$${nat_acl}"/>
+        <param name="apply-inbound-acl" value="$${acl_default}"/>
+      </profile>
+
+      <!-- EXTERNAL PROFILE -->
+      <profile name="external">
+        <description>External Gateway Profile for PSTN/SIP carriers</description>
+        <param name="domain" value="auto"/>
+        <param name="dialplan" value="XML"/>
+        <param name="context" value="public"/>
+        <param name="rtp-ip" value="$${local_ip_v4}"/>
+        <param name="sip-ip" value="$${local_ip_v4}"/>
+        <param name="ext-rtp-ip" value="$${external_ip_v4}"/>
+        <param name="ext-sip-ip" value="$${external_ip_v4}"/>
+        
+        <param name="inbound-codec-prefs" value="OPUS,G722,PCMU,PCMA"/>
+        <param name="outbound-codec-prefs" value="OPUS,G722,PCMU,PCMA"/>
+        
+        <param name="sip-port" value="$${sip_port}"/>
+        <param name="tls-sip-port" value="$${sip_tls_port}"/>
+        <param name="enable-timer" value="true"/>
+        <param name="session-timeout" value="3600"/>
+        
+        <param name="apply-nat-acl" value="$${nat_acl}"/>
+        <param name="apply-inbound-acl" value="public"/>
+        
+        <param name="rtp-timer-name" value="soft"/>
+        <param name="rtp-hold-timeout" value="3600"/>
+      </profile>
 
       <profiles>
         <x-pre-process cmd="include" data="sofia_profiles/*.xml"/>

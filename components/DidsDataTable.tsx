@@ -3,12 +3,13 @@ import { Did, DidStatus, DidRouteType } from '../types';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/Table';
 import { Badge } from './ui/Badge';
 import { Button } from './ui/Button';
-import { MoreHorizontalIcon, PhoneIcon, LoaderIcon } from './icons/Icons';
+import { MoreHorizontalIcon, PhoneIcon, LoaderIcon, TrashIcon } from './icons/Icons';
 import { t } from '../lib/i18n';
 
 interface DidsDataTableProps {
   dids: Did[];
   onCall: (did: Did) => void;
+  onDelete: (didId: string) => void;
   callingDidId: string | null;
 }
 
@@ -34,7 +35,7 @@ const getRouteTypeLabel = (routeType: DidRouteType) => {
     }
 }
 
-export const DidsDataTable: React.FC<DidsDataTableProps> = ({ dids, onCall, callingDidId }) => {
+export const DidsDataTable: React.FC<DidsDataTableProps> = ({ dids, onCall, onDelete, callingDidId }) => {
   return (
     <Table>
       <TableHeader>
@@ -77,9 +78,14 @@ export const DidsDataTable: React.FC<DidsDataTableProps> = ({ dids, onCall, call
                     )}
                     Llamar
                  </Button>
-                <Button variant="ghost" size="icon">
-                    <MoreHorizontalIcon className="h-4 w-4" />
-                    <span className="sr-only">Open menu</span>
+                <Button 
+                    variant="ghost" 
+                    size="icon"
+                    onClick={() => onDelete(did.id)}
+                    className="text-red-400 hover:text-red-300 hover:bg-red-900/20"
+                >
+                    <TrashIcon className="h-4 w-4" />
+                    <span className="sr-only">Delete DID</span>
                 </Button>
               </TableCell>
             </TableRow>

@@ -1,11 +1,34 @@
 <x-pre-process cmd="default" data="xml_curl_enabled=false"/>
-<x-pre-process cmd="default" data="global_codec_prefs=OPUS,G722,PCMU,PCMA,H264,VP8"/>
-<x-pre-process cmd="default" data="outbound_codec_prefs=OPUS,G722,PCMU,PCMA"/>
-<x-pre-process cmd="default" data="media_webrtc=true"/>
 
+<!-- CODECS: SIN VIDEO CODECS para VoIP puro - CRÍTICO -->
+<x-pre-process cmd="default" data="global_codec_prefs=OPUS,G722,PCMU,PCMA"/>
+<x-pre-process cmd="default" data="inbound_codec_prefs=OPUS,G722,PCMU,PCMA"/>
+<x-pre-process cmd="default" data="outbound_codec_prefs=OPUS,G722,PCMU,PCMA"/>
+
+<!-- NETWORK: Sincronizado con Docker -->
+<x-pre-process cmd="set" data="local_ip_v4=0.0.0.0"/>
+<x-pre-process cmd="set" data="external_ip_v4=$${local_ip_v4}"/>
+
+<!-- DOMAIN -->
 <x-pre-process cmd="set" data="domain=$${local_ip_v4}"/>
 <x-pre-process cmd="set" data="domain_name=$${domain}"/>
 
+<!-- SIP PORTS -->
+<x-pre-process cmd="set" data="sip_port=5060"/>
+<x-pre-process cmd="set" data="sip_tls_port=5061"/>
+
+<!-- RTP RANGE - SINCRONIZADO CON DOCKER -->
+<x-pre-process cmd="set" data="rtp_start_port=16384"/>
+<x-pre-process cmd="set" data="rtp_end_port=32768"/>
+
+<!-- ESL (Event Socket Layer) -->
 <x-pre-process cmd="set" data="esl_listen_ip=0.0.0.0"/>
 <x-pre-process cmd="set" data="esl_listen_port=8021"/>
 <x-pre-process cmd="set" data="esl_password=ClueCon"/>
+
+<!-- ACL Settings -->
+<x-pre-process cmd="set" data="nat_acl=nat.auto"/>
+<x-pre-process cmd="set" data="acl_default=default"/>
+
+<!-- Media WebRTC -->
+<x-pre-process cmd="set" data="media_webrtc=true"/>

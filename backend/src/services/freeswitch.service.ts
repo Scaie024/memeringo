@@ -3,63 +3,106 @@ import { EventEmitter } from 'events';
 
 class FreeSwitchService extends EventEmitter {
     private connection: Connection | null = null;
-    private isConnected: boolean = false;
+    private isConnected = false;
+    private reconnectTimer: NodeJS.Timeout | null = null;
+    private reconnectDelayMs = 5000;
     private readonly config = {
         host: process.env.FS_ESL_HOST || 'localhost',
         port: parseInt(process.env.FS_ESL_PORT || '8021', 10),
         password: process.env.FS_ESL_PASSWORD || 'ClueCon',
+        gateway: process.env.FS_DIAL_GATEWAY || 'my_trunk',
     };
 
     constructor() {
         super();
     }
 
+    public get connected(): boolean {
+        return this.isConnected;
+    }
+
+    public get status() {
+        return {
+            connected: this.isConnected,
+            host: this.config.host,
+            port: this.config.port,
+            gateway: this.config.gateway,
+        };
+    }
+
     public async connect(): Promise<void> {
         if (this.isConnected && this.connection) {
-            console.error('Already connected to FreeSWITCH ESL.');
             return;
         }
 
         return new Promise((resolve, reject) => {
             console.error(`Connecting to FreeSWITCH ESL at ${this.config.host}:${this.config.port}...`);
-            this.connection = new Connection({
-                host: this.config.host,
-                port: this.config.port,
-                password: this.config.password,
-            });
+            try {
+                const ConnectionCtor = Connection as unknown as any;
+                this.connection = new ConnectionCtor(
+                    this.config.host,
+                    this.config.port,
+                    this.config.password,
+                    () => {
+                        console.error('FreeSWITCH ESL connection ready.');
+                        this.isConnected = true;
+                        this.clearReconnectTimer();
+                        this.reconnectDelayMs = 5000;
+                        // @ts-ignore
+                        this.emit('connected');
+                        resolve();
+                    }
+                );
+            } catch (err) {
+                reject(err);
+                return;
+            }
 
-            this.connection.on('esl::ready', () => {
-                console.error('FreeSWITCH ESL connection ready.');
-                this.isConnected = true;
-                // FIX: Bypass incorrect type definition for EventEmitter which seems to be missing the 'emit' property.
-                // @ts-ignore
-                this.emit('connected');
-                resolve();
-            });
+            const connection = this.connection;
+            if (!connection) {
+                reject(new Error('Failed to initialize FreeSWITCH connection instance'));
+                return;
+            }
 
-            this.connection.on('esl::end', () => {
+            connection.on('esl::end', () => {
                 console.error('FreeSWITCH ESL connection ended.');
                 this.isConnected = false;
-                // FIX: Bypass incorrect type definition for EventEmitter which seems to be missing the 'emit' property.
+                this.scheduleReconnect();
                 // @ts-ignore
                 this.emit('disconnected');
             });
-            
-            this.connection.on('error', (error) => {
+
+            connection.on('error', (error: any) => {
                 console.error('FreeSWITCH ESL connection error:', error);
                 this.isConnected = false;
-                // FIX: Bypass incorrect type definition for EventEmitter which seems to be missing the 'emit' property.
+                this.scheduleReconnect();
                 // @ts-ignore
-                this.emit('error', error);
+                this.emit('connectionError', error);
                 reject(error);
             });
         });
     }
 
     public disconnect(): void {
+        this.clearReconnectTimer();
         if (this.connection) {
-            this.connection.close();
+            const anyConnection = this.connection as unknown as { disconnect?: () => void; close?: () => void };
+            if (typeof anyConnection.disconnect === 'function') {
+                anyConnection.disconnect();
+            } else if (typeof anyConnection.close === 'function') {
+                anyConnection.close();
+            }
         }
+        this.connection = null;
+        this.isConnected = false;
+    }
+
+    public async ensureConnected(): Promise<void> {
+        if (this.isConnected) {
+            return;
+        }
+
+        await this.connect();
     }
 
     public async originateCall(fromNumber: string, destination: string): Promise<string> {
@@ -67,13 +110,12 @@ class FreeSwitchService extends EventEmitter {
             throw new Error('Not connected to FreeSWITCH ESL.');
         }
 
-        // Example: originate {origination_caller_id_number=...}sofia/gateway/my_trunk/... &echo()
-        const command = `originate {origination_caller_id_number=${fromNumber}}sofia/gateway/my_trunk/${destination} &echo()`;
+        const command = `originate {origination_caller_id_number=${fromNumber}}sofia/gateway/${this.config.gateway}/${destination} &echo()`;
 
         console.error(`Executing originate command: ${command}`);
-        
+
         return new Promise((resolve, reject) => {
-            this.connection!.api(command, (res) => {
+            this.connection!.api(command, (res: any) => {
                 const body = res.getBody();
                 if (body.startsWith('+OK')) {
                     const callUuid = body.split(' ')[1]?.trim();
@@ -85,6 +127,31 @@ class FreeSwitchService extends EventEmitter {
                 }
             });
         });
+    }
+
+    private scheduleReconnect() {
+        if (this.reconnectTimer) {
+            return;
+        }
+
+        const delay = this.reconnectDelayMs;
+        console.error(`Reconnecting to FreeSWITCH ESL in ${Math.round(delay / 1000)}s...`);
+        this.reconnectTimer = setTimeout(() => {
+            this.reconnectTimer = null;
+            this.connect().catch((error) => {
+                console.error('Reconnection attempt failed:', error);
+                this.reconnectDelayMs = Math.min(this.reconnectDelayMs * 2, 60000);
+                this.scheduleReconnect();
+            });
+        }, delay);
+    }
+
+    private clearReconnectTimer() {
+        if (this.reconnectTimer) {
+            clearTimeout(this.reconnectTimer);
+            this.reconnectTimer = null;
+        }
+        this.reconnectDelayMs = 5000;
     }
 }
 

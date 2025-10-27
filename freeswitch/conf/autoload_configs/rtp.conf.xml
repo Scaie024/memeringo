@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document type="freeswitch/xml">
+  <section name="configuration" description="RTP Configuration">
+    <configuration name="rtp.conf" description="RTP Configuration">
+      
+      <!-- CODEC Settings -->
+      <settings>
+        <!-- Codec negotiation -->
+        <param name="codec-negotiation" value="generous"/>
+        <param name="disable-transcoding" value="false"/>
+        
+        <!-- RTP Port Range -->
+        <param name="rtp-start-port" value="16384"/>
+        <param name="rtp-end-port" value="32768"/>
+        
+        <!-- RTP IP Configuration -->
+        <param name="rtp-ip" value="0.0.0.0"/>
+        <param name="rtp-bind-ip" value="0.0.0.0"/>
+        
+        <!-- RTP Timeout settings -->
+        <param name="rtp-timeout-sec" value="300"/>
+        <param name="rtp-session-timeout-sec" value="1800"/>
+        
+        <!-- DTMF settings -->
+        <param name="dtmf-type" value="rfc2833"/>
+        <param name="dtmf-duration" value="100"/>
+        
+        <!-- JITTER Buffer -->
+        <param name="jitter-buffer-msec" value="0:60"/>
+        
+        <!-- VAD - Voice Activity Detection -->
+        <param name="vad" value="in"/>
+        
+        <!-- Silence detection -->
+        <param name="silence-thresh" value="0"/>
+        <param name="silence-hits" value="35"/>
+      </settings>
+
+      <!-- CODEC PROFILES -->
+      <profiles>
+        <!-- OPUS Codec -->
+        <param name="opus" value="true"/>
+        
+        <!-- G.722 Codec (Wideband) -->
+        <param name="g722" value="true"/>
+        
+        <!-- PCMU Codec (G.711 µ-law) -->
+        <param name="pcmu" value="true"/>
+        
+        <!-- PCMA Codec (G.711 A-law) -->
+        <param name="pcma" value="true"/>
+      </profiles>
+    </configuration>
+  </section>
+</document>

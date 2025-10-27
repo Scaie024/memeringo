@@ -2,18 +2,26 @@
 <document type="freeswitch/xml">
   <section name="configuration" description="Various FreeSWITCH Configuration">
     <configuration name="switch.conf" description="Core Configuration">
+      
+      <!-- Codecs -->
       <default-ptimes>
         <param name="default-ptime" value="20"/>
       </default-ptimes>
 
-      <!-- RTP Configuration -->
+      <!-- RTP Configuration - SINCRONIZADO CON DOCKER -->
       <settings>
         <param name="rtp-start-port" value="16384"/>
         <param name="rtp-end-port" value="32768"/>
-        <param name="rtp-ip" value="$${local_ip_v4}"/>
+        <param name="rtp-ip" value="0.0.0.0"/>
         <param name="hold-music" value="silence_stream://1400"/>
-        <param name="log-g729-payloads" value="true"/>
         <param name="colorize-console" value="true"/>
+        
+        <!-- Media Settings -->
+        <param name="media-mix-threads" value="2"/>
+        <param name="session-timeout" value="1800"/>
+        <param name="max-dtmf-duration" value="96000"/>
+        <param name="minimum-dtmf-duration" value="400"/>
+        <param name="dtmf-type" value="rfc2833"/>
       </settings>
     </configuration>
   </section>

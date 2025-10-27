@@ -7,27 +7,27 @@
     "dev": "npx ts-node-dev --respawn --transpile-only src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
-    "prisma:migrate": "npx prisma migrate dev",
-    "prisma:seed": "npx prisma db seed"
+    "prisma:migrate": "npx prisma migrate dev --schema ../prisma/schema.prisma",
+    "prisma:seed": "npx ts-node prisma/seed.ts",
+    "prisma:generate": "npx prisma generate --schema ../prisma/schema.prisma",
+    "type-check": "tsc --noEmit"
   },
   "prisma": {
-    "seed": "npx ts-node prisma/seed.ts"
+    "seed": "ts-node prisma/seed.ts"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
   "dependencies": {
-    "@fastify/cors": "^9.0.1",
-    "@prisma/client": "^5.12.1",
+    "@fastify/cors": "^11.1.0",
+    "@prisma/client": "^6.18.0",
     "dotenv": "^16.4.5",
-    "fastify": "^4.26.2",
+    "fastify": "^5.6.1",
     "modesl": "^1.2.0"
   },
   "devDependencies": {
-    "@types/node": "^20.12.7",
-    "prisma": "^5.12.1",
+    "@types/node": "^22.14.0",
+    "prisma": "^6.18.0",
     "ts-node": "^10.9.2",
     "ts-node-dev": "^2.0.0",
-    "typescript": "^5.4.5"
+    "tsx": "^4.20.6",
+    "typescript": "^5.8.2"
   }
 }
