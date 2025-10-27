@@ -26,26 +26,37 @@ npm run dev
 
 ---
 
-### Opción 2: Con Docker (Recomendado para producción)
+### Opción 2: Con Docker (Recomendado para producción y pruebas SIP/RTP)
 
-**Una sola terminal:**
+1) Abre Docker Desktop (asegúrate de que el daemon esté corriendo).
+
+2) Inicia solo FreeSWITCH para pruebas locales de SIP/RTP:
 ```bash
 cd /Users/arturopinzon/Desktop/voicewoot/memeringo
-docker-compose up -d
+docker compose -f docker-compose-freeswitch-only.yml up -d
 ```
 
-✅ Esperar 30 segundos (healthchecks)
-
-**Verificar:**
+3) Verifica estado y puertos:
 ```bash
-docker-compose ps
-docker-compose logs -f
+docker compose -f docker-compose-freeswitch-only.yml ps
+docker logs -f freeswitch_pbx
 ```
 
-**Acceder:**
-- Frontend: http://localhost:3000
+4) Backend y Frontend (host):
+```bash
+# Backend (prod estable)
+cd /Users/arturopinzon/Desktop/voicewoot/memeringo/backend
+npm run build && npm start
+
+# Frontend (dev)
+cd /Users/arturopinzon/Desktop/voicewoot/memeringo
+npm run dev
+```
+
+5) Acceder:
+- Frontend: http://localhost:5173
 - Backend: http://localhost:3001
-- FreeSWITCH: `docker-compose exec freeswitch fs_cli`
+- FreeSWITCH CLI: `docker exec -it freeswitch_pbx fs_cli`
 
 ---
 
@@ -71,7 +82,21 @@ open http://localhost:5173
 ✓ Botón "Llamar"
 ```
 
----
+
+## 🧪 Prueba SIP/RTP local (eco 9000)
+
+Con FreeSWITCH corriendo en Docker y el backend conectado al ESL:
+
+1) Desde la UI agrega un DID con número `9000` (sirve como botón de prueba).
+2) Haz clic en "Llamar" sobre ese DID: el backend originará `9000` por el perfil interno y escucharás un eco (RTP OK).
+3) Alternativas:
+	- API directa: `curl -X POST http://localhost:3001/api/calls/originate -H 'Content-Type: application/json' -d '{"phoneNumber":"9000"}'`
+	- Softphone (Linphone/Zoiper): Llama a `sip:9000@127.0.0.1` (no requiere registro, solo llamada directa IP) y escucha el eco.
+
+Si no hay audio, revisa:
+- Firewall de macOS (permitir UDP 16384-32768)
+- Logs: `docker logs -f freeswitch_pbx` y backend
+- ESL conectado: `curl http://localhost:3001/api/freeswitch/status`
 
 ## 📂 Archivos Importantes
 

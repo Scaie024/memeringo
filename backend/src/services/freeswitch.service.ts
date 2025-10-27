@@ -110,20 +110,36 @@ class FreeSwitchService extends EventEmitter {
             throw new Error('Not connected to FreeSWITCH ESL.');
         }
 
-        const command = `originate {origination_caller_id_number=${fromNumber}}sofia/gateway/${this.config.gateway}/${destination} &echo()`;
+        // Allow local test destinations (extensions in default context)
+        // 9000: echo, 9001: tone, 9002: music on hold
+        const isLocalTestExt = /^(9000|9001|9002)$/.test(destination);
+
+        // Build dial string depending on the destination
+        // - Local test extensions go to internal profile and the default dialplan
+        // - Otherwise, use the configured gateway
+        const dialString = isLocalTestExt
+            ? `sofia/internal/${destination}@127.0.0.1`
+            : `sofia/gateway/${this.config.gateway}/${destination}`;
+
+        // For local test extensions the dialplan already plays media (echo/tone/moh), so park the B-leg
+        // For gateway calls attach echo to validate media path without remote endpoint
+        const app = isLocalTestExt ? 'park()' : 'echo()';
+
+        const command = `originate {origination_caller_id_number=${fromNumber}}${dialString} &${app}`;
 
         console.error(`Executing originate command: ${command}`);
 
         return new Promise((resolve, reject) => {
             this.connection!.api(command, (res: any) => {
                 const body = res.getBody();
-                if (body.startsWith('+OK')) {
+                if (typeof body === 'string' && body.startsWith('+OK')) {
                     const callUuid = body.split(' ')[1]?.trim();
                     console.error(`Call originated successfully. UUID: ${callUuid}`);
                     resolve(callUuid);
                 } else {
-                    console.error('Failed to originate call:', body);
-                    reject(new Error(`Originate failed: ${body}`));
+                    const msg = typeof body === 'string' ? body : JSON.stringify(body);
+                    console.error('Failed to originate call:', msg);
+                    reject(new Error(`Originate failed: ${msg}`));
                 }
             });
         });

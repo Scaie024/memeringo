@@ -5,7 +5,7 @@
 
 set -e
 
-PROJECT_DIR="/Users/arturopinzon/Downloads/asuputamadre/memeringo"
+PROJECT_DIR="/Users/arturopinzon/Desktop/voicewoot/memeringo"
 cd "$PROJECT_DIR"
 
 echo "🚀 VoiceWoot + FreeSWITCH Startup Script"
@@ -19,13 +19,17 @@ ulimit -n 8192 || echo "⚠️  Podría necesitar permisos elevados"
 # 2. Start FreeSWITCH Docker
 echo ""
 echo "🐳 Iniciando FreeSWITCH en Docker..."
-docker-compose -f docker-compose-freeswitch-only.yml up -d
+if ! docker info >/dev/null 2>&1; then
+  echo "❌ Docker Desktop no está corriendo. Ábrelo y vuelve a ejecutar este script."
+  exit 1
+fi
+docker compose -f docker-compose-freeswitch-only.yml up -d
 sleep 5
 
 # 3. Check FreeSWITCH status
 echo ""
 echo "📋 Estado de FreeSWITCH:"
-docker-compose -f docker-compose-freeswitch-only.yml ps | grep freeswitch
+docker compose -f docker-compose-freeswitch-only.yml ps | grep freeswitch
 
 # 4. Start Backend
 echo ""
@@ -55,8 +59,8 @@ sleep 5
 # 7. Test Frontend
 echo ""
 echo "🧪 Verificando Frontend..."
-if curl -s http://localhost:3000 > /dev/null; then
-  echo "✅ Frontend respondiendo en http://localhost:3000"
+if curl -s http://localhost:5173 > /dev/null; then
+  echo "✅ Frontend respondiendo en http://localhost:5173"
 else
   echo "❌ Frontend no responde"
 fi
@@ -67,7 +71,7 @@ echo "✅ SISTEMA OPERACIONAL"
 echo "========================================"
 echo ""
 echo "🌐 Accesos:"
-echo "  Frontend:  http://localhost:3000"
+echo "  Frontend:  http://localhost:5173"
 echo "  Backend:   http://localhost:3001"
 echo "  Health:    http://localhost:3001/health"
 echo "  DIDs API:  http://localhost:3001/api/dids"
