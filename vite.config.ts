@@ -6,8 +6,10 @@ export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, '.', '');
     return {
       server: {
-        port: 3000,
+        port: 5173, // Standard Vite dev port to avoid confusion
         host: '0.0.0.0',
+        strictPort: true,
+        open: false,
       },
       plugins: [react()],
       define: {
